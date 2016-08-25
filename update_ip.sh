@@ -28,4 +28,4 @@ if [ "$SC" != "200" ]; then
   echo "failed to update ip to github, quit"
   exit 1
 fi
-echo $IP > i
+echo $IP > ip
