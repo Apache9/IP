@@ -1,0 +1,9 @@
+{
+  "message": "{date}",
+  "committer": {
+    "name": "zhangduo",
+    "email": "zhangduo@apache.org"
+  },
+  "content": "{content}",
+  "sha": "{sha}"
+}
