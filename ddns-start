@@ -1,7 +1,7 @@
 #!/bin/sh
 
 IP=$1
-source .config
+source /jffs/scripts/.config
 echo "start ddns" > /jffs/scripts/ddns.log
 echo "the new ip is $IP" >> /jffs/scripts/ddns.log
 if [ -z $IP ]; then
@@ -29,11 +29,15 @@ if [ "$SC" != "200" ]; then
 fi
 echo "successfully update ip to github"  >> /jffs/scripts/ddns.log
 
-SC=`wget --spider -S "http://$NOIP_U:$NOIP_P@dynupdate.no-ip.com/nic/update?hostname=$NOIP_H&myip=$IP"  2>&1 | grep "HTTP/" | awk '{print $2}'`
+SC=`curl -s -X GET -w "%{http_code}" 'http://$NOIP_U:$NOIP_P@dynupdate.no-ip.com/nic/update?hostname=$NOIP_H&myip=$IP'`
+LEN=`echo ${#SC}`
+let START=LEN-3
+SC=`echo ${SC:$START:3}`
 if [ "$SC" != "200" ]; then
-  echo "failed to update ip to no ip, quit" >> /jffs/scripts/ddns.log
+  echo "failed to update ip to no-ip, quit" >> /jffs/scripts/ddns.log
   /sbin/ddns_custom_updated 0
   exit 1
 fi
+echo "successfully update ip to no-ip"  >> /jffs/scripts/ddns.log
 
 /sbin/ddns_custom_updated 1
