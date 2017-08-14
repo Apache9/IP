@@ -1,6 +1,7 @@
 #!/bin/sh
 
 IP=$1
+source .config
 echo "start ddns" > /jffs/scripts/ddns.log
 echo "the new ip is $IP" >> /jffs/scripts/ddns.log
 if [ -z $IP ]; then
@@ -8,7 +9,7 @@ if [ -z $IP ]; then
   /sbin/ddns_custom_updated 0
   exit 1
 fi
-SHA=`curl -s -k /jffs/scripts/github.pem -u Apache9:<token> https://api.github.com/repos/Apache9/IP/contents/R6300V2 | grep '"sha":' | awk '{print $2}' | awk -F\" '{print $2}'`
+SHA=`curl -s -k /jffs/scripts/github.pem -u $GITHUB_U:$GITHUB_P https://api.github.com/repos/Apache9/IP/contents/R6300V2 | grep '"sha":' | awk '{print $2}' | awk -F\" '{print $2}'`
 if [ ${#SHA} != 40 ]; then
   echo "can not get sha of the file, quit" >> /jffs/scripts/ddns.log
   /sbin/ddns_custom_updated 0
@@ -17,7 +18,7 @@ fi
 BASE64_IP=`echo $IP | openssl enc -base64`
 DATE=`LC_ALL=en_US.utf8 date`
 sed "s/{date}/$DATE/g; s/{content}/$BASE64_IP/g; s/{sha}/$SHA/g;" /jffs/scripts/template.json > /jffs/scripts/request.json
-SC=`curl -s -k /jffs/scripts/github.pem -u Apache9:<token> -X PUT -H "Content-Type: application/json" -d '@/jffs/scripts/request.json' -w "%{http_code}" "https://api.github.com/repos/Apache9/IP/contents/R6300V2"`
+SC=`curl -s -k /jffs/scripts/github.pem -u $GITHUB_U:$GITHUB_P -X PUT -H "Content-Type: application/json" -d '@/jffs/scripts/request.json' -w "%{http_code}" "https://api.github.com/repos/Apache9/IP/contents/R6300V2"`
 LEN=`echo ${#SC}`
 let START=LEN-3
 SC=`echo ${SC:$START:3}`
@@ -27,4 +28,12 @@ if [ "$SC" != "200" ]; then
   exit 1
 fi
 echo "successfully update ip to github"  >> /jffs/scripts/ddns.log
+
+SC=`wget --spider -S "http://$NOIP_U:$NOIP_P@dynupdate.no-ip.com/nic/update?hostname=$NOIP_H&myip=$IP"  2>&1 | grep "HTTP/" | awk '{print $2}'`
+if [ "$SC" != "200" ]; then
+  echo "failed to update ip to no ip, quit" >> /jffs/scripts/ddns.log
+  /sbin/ddns_custom_updated 0
+  exit 1
+fi
+
 /sbin/ddns_custom_updated 1
