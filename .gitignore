@@ -1,2 +1,5 @@
 .config
 request.json
+ddns.log
+github.pem
+github.cer
